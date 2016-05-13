@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.util.Log;
@@ -42,37 +43,57 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     JSONObject jsonMessage = new JSONObject(message);
 
-                    JSONArray voltages = jsonMessage.getJSONArray("cell_voltages");
-
-                    ProgressBar v1Progress = (ProgressBar) findViewById(R.id.v1progressBar);
-                    TextView v1View = (TextView)findViewById(R.id.v1View);
-                    double cell_1_voltage = voltages.getDouble(0);
-                    int cell_1_percent = (int)(100*(cell_1_voltage - 3.2));
-
-                    v1Progress.setProgress(cell_1_percent);
-                    v1View.setText(String.format("%1$.3f", cell_1_voltage) + " V");
-
-                    ProgressBar v2Progress = (ProgressBar) findViewById(R.id.v2progressBar);
-                    TextView v2View = (TextView)findViewById(R.id.v2View);
-                    double cell_2_voltage = voltages.getDouble(1);
-                    int cell_2_percent = (int)(100*(cell_2_voltage - 3.2));
-
-                    v2Progress.setProgress(cell_2_percent);
-                    v2View.setText(String.format("%1$.3f", cell_2_voltage) + " V");
-
-                    ProgressBar v3Progress = (ProgressBar) findViewById(R.id.v3progressBar);
-                    TextView v3View = (TextView)findViewById(R.id.v3View);
-                    double cell_3_voltage = voltages.getDouble(2);
-                    int cell_3_percent = (int)(100*(cell_3_voltage - 3.2));
-
-                    v3Progress.setProgress(cell_3_percent);
-                    v3View.setText(String.format("%1$.3f", cell_3_voltage) + " V");
-
-                    TextView current = (TextView) findViewById(R.id.currentView);
-                    current.setText(jsonMessage.getString("charge_current") + " mA");
-
                     TextView modeView = (TextView) findViewById(R.id.statusView);
                     modeView.setText(jsonMessage.getString("mode"));
+
+                    if(jsonMessage.has("state")) {
+
+                        LinearLayout layout = (LinearLayout)findViewById(R.id.statusLayout);
+                        layout.setVisibility(View.VISIBLE);
+
+                        JSONObject jsonState = jsonMessage.getJSONObject("state");
+
+                        JSONArray voltages = jsonState.getJSONArray("cell_voltages");
+
+                        ProgressBar v1Progress = (ProgressBar) findViewById(R.id.v1progressBar);
+                        TextView v1View = (TextView) findViewById(R.id.v1View);
+                        double cell_1_voltage = voltages.getDouble(0);
+                        int cell_1_percent = (int) (100 * (cell_1_voltage - 3.2));
+
+                        v1Progress.setProgress(cell_1_percent);
+                        v1View.setText(String.format("%1$.3f", cell_1_voltage) + " V");
+
+                        ProgressBar v2Progress = (ProgressBar) findViewById(R.id.v2progressBar);
+                        TextView v2View = (TextView) findViewById(R.id.v2View);
+                        double cell_2_voltage = voltages.getDouble(1);
+                        int cell_2_percent = (int) (100 * (cell_2_voltage - 3.2));
+
+                        v2Progress.setProgress(cell_2_percent);
+                        v2View.setText(String.format("%1$.3f", cell_2_voltage) + " V");
+
+                        ProgressBar v3Progress = (ProgressBar) findViewById(R.id.v3progressBar);
+                        TextView v3View = (TextView) findViewById(R.id.v3View);
+                        double cell_3_voltage = voltages.getDouble(2);
+                        int cell_3_percent = (int) (100 * (cell_3_voltage - 3.2));
+
+                        v3Progress.setProgress(cell_3_percent);
+                        v3View.setText(String.format("%1$.3f", cell_3_voltage) + " V");
+
+                        TextView currentView = (TextView) findViewById(R.id.currentView);
+                        currentView.setText(jsonState.getString("charge_current") + " mA");
+
+                        TextView chargeView = (TextView) findViewById(R.id.chargeView);
+                        chargeView.setText(jsonState.getString("total_charge") + " mAh");
+
+                        TextView tempView = (TextView) findViewById(R.id.internalTempView);
+                        double internalTempC = jsonState.getDouble("internal_temp");
+                        double internalTempF = 1.8 * internalTempC + 32;
+                        tempView.setText(String.format("%.1f °F", internalTempF));
+
+                    }else{
+                        LinearLayout layout = (LinearLayout) findViewById(R.id.statusLayout);
+                        layout.setVisibility(View.INVISIBLE);
+                    }
 
                 }catch (JSONException ex){
                     ex.printStackTrace();
@@ -90,9 +111,11 @@ public class MainActivity extends AppCompatActivity {
     Thread subscribeThread;
     ConnectionFactory factory = new ConnectionFactory();
     private void setupConnectionFactory() {
-        String uri = "192.168.40.10";
+        String uri = "192.168.40.117";
         try {
             factory.setAutomaticRecoveryEnabled(false);
+            factory.setUsername("charger");
+            factory.setPassword("charger");
             factory.setHost(uri);
 
         //} catch (KeyManagementException | NoSuchAlgorithmException | URISyntaxException e1) {
